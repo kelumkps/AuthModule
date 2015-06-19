@@ -6,6 +6,7 @@ var UserModel = require('./mongoose').UserModel;
 var ClientModel = require('./mongoose').ClientModel;
 var AccessTokenModel = require('./mongoose').AccessTokenModel;
 var RefreshTokenModel = require('./mongoose').RefreshTokenModel;
+var GrantCodeModel = require('./mongoose').GrantCodeModel;
 
 // create OAuth 2.0 server
 var server = oauth2orize.createServer();
@@ -133,6 +134,55 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
         });
     });
 }));
+
+server.grant(oauth2orize.grant.code({
+    scopeSeparator: [ ' ', ',' ]
+}, function(client, redirectURI, user, ares, done) {
+    var grant = new GrantCodeModel({
+        client: client.clientId,
+        user: user.userId,
+        scope: ares.scope
+    });
+    grant.save(function(error) {
+        done(error, error ? null : grant.code);
+    });
+}));
+
+server.exchange(oauth2orize.exchange.code({
+    userProperty: 'app'
+}, function(client, code, redirectURI, done) {
+    GrantCode.findOne({ code: code }, function(error, grant) {
+        if (grant && grant.active && grant.client == client.clientId) {
+            var tokenValue = crypto.randomBytes(32).toString('hex');
+            var token = new AccessTokenModel({
+                token: tokenValue,
+                clientId: grant.client,
+                userId: grant.user,
+                grant: grant,
+                scope: grant.scope
+            });
+            token.save(function(error) {
+                done(error, error ? null : token.token, null, error ? null : { token_type: 'standard' });
+            });
+        } else {
+            done(error, false); 
+        }
+    });
+}));
+
+server.serializeClient(function(client, done) {
+    done(null, client.clientId);
+});
+server.deserializeClient(function(id, done) {
+    ClientModel.findOne({
+            clientId: clientId
+        }, function(err, client) {
+            done(error, error ? null : application);
+    });
+
+});
+
+
 
 // token endpoint
 exports.token = [

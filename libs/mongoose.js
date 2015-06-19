@@ -143,7 +143,9 @@ var AccessToken = new Schema({
     created: {
         type: Date,
         default: Date.now
-    }
+    },
+    grant: { type: Schema.Types.ObjectId, ref: 'GrantCode' },
+    scope: [ { type: String }],
 });
 
 var AccessTokenModel = mongoose.model('AccessToken', AccessToken);
@@ -171,8 +173,23 @@ var RefreshToken = new Schema({
 
 var RefreshTokenModel = mongoose.model('RefreshToken', RefreshToken);
 
+//Grant Code
+var GrantCode = new Schema({
+    code: { type: String, unique: true, default: function() {
+            return crypto.randomBytes(24).toString('hex'); //todo remove this one and set externally.
+        }
+    },
+    user: { type: String, required: true },
+    client: { type: String, required: true },
+    scope: [ { type: String } ],
+    active: { type: Boolean, default: true }
+});
+
+var GrantCodeModel = mongoose.model('GrantCode', GrantCode);
+
 module.exports.UserModel = UserModel;
 module.exports.ClientModel = ClientModel;
 module.exports.AccessTokenModel = AccessTokenModel;
 module.exports.RefreshTokenModel = RefreshTokenModel;
 module.exports.ArticleModel = ArticleModel;
+module.exports.GrantCodeModel = GrantCodeModel;
