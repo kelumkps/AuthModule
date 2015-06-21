@@ -3,16 +3,50 @@ var passport = require('passport');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
+var LocalStrategy = require('passport-local');
 var UserModel = require('./mongoose').UserModel;
 var ClientModel = require('./mongoose').ClientModel;
 var AccessTokenModel = require('./mongoose').AccessTokenModel;
 var RefreshTokenModel = require('./mongoose').RefreshTokenModel;
 
+passport.use(new LocalStrategy({
+    usernameField: 'email',
+    passwordField: 'password'
+}, function (email, password, done) {
+    UserModel.findOne({
+        username: email
+    }, function (err, user) {
+        if (err) {
+            return done(err);
+        }
+        if (!user) {
+            return done(null, false);
+        }
+        if (!user.checkPassword(password)) {
+            return done(null, false);
+        }
+        done(err, user, err ? {message: err.message} : null);
+    });
+
+}));
+
+passport.serializeUser(function (user, done) {
+    cosole.log('serializeUser user', user);
+    done(null, user.id);
+});
+passport.deserializeUser(function (id, done) {
+    UserModel.findById(id, function (error, user) {
+        cosole.log('deserialize user', user);
+        done(error, user);
+    });
+});
+
+
 passport.use(new BasicStrategy(
-    function(username, password, done) {
+    function (username, password, done) {
         ClientModel.findOne({
             clientId: username
-        }, function(err, client) {
+        }, function (err, client) {
             if (err) {
                 return done(err);
             }
@@ -29,10 +63,10 @@ passport.use(new BasicStrategy(
 ));
 
 passport.use(new ClientPasswordStrategy(
-    function(clientId, clientSecret, done) {
+    function (clientId, clientSecret, done) {
         ClientModel.findOne({
             clientId: clientId
-        }, function(err, client) {
+        }, function (err, client) {
             if (err) {
                 return done(err);
             }
@@ -49,10 +83,10 @@ passport.use(new ClientPasswordStrategy(
 ));
 
 passport.use(new BearerStrategy(
-    function(accessToken, done) {
+    function (accessToken, done) {
         AccessTokenModel.findOne({
             token: accessToken
-        }, function(err, token) {
+        }, function (err, token) {
             if (err) {
                 return done(err);
             }
@@ -63,7 +97,7 @@ passport.use(new BearerStrategy(
             if (Math.round((Date.now() - token.created) / 1000) > config.get('security:tokenLife')) {
                 AccessTokenModel.remove({
                     token: accessToken
-                }, function(err) {
+                }, function (err) {
                     if (err) return done(err);
                 });
                 return done(null, false, {
@@ -71,7 +105,7 @@ passport.use(new BearerStrategy(
                 });
             }
 
-            UserModel.findById(token.userId, function(err, user) {
+            UserModel.findById(token.userId, function (err, user) {
                 if (err) {
                     return done(err);
                 }

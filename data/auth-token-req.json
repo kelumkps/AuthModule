@@ -1,0 +1,7 @@
+{
+	"grant_type": "password",
+	"client_id": "mobileV1",
+	"client_secret": "abc123456",
+	"username": "andrey",
+	"password": "simplepassword"
+}

@@ -120,7 +120,8 @@ var Client = new Schema({
     clientSecret: {
         type: String,
         required: true
-    }
+    },
+    domains: [{type: String}]
 });
 
 var ClientModel = mongoose.model('Client', Client);
@@ -144,8 +145,8 @@ var AccessToken = new Schema({
         type: Date,
         default: Date.now
     },
-    grant: { type: Schema.Types.ObjectId, ref: 'GrantCode' },
-    scope: [ { type: String }],
+    grant: {type: Schema.Types.ObjectId, ref: 'GrantCode'},
+    scope: [{type: String}]
 });
 
 var AccessTokenModel = mongoose.model('AccessToken', AccessToken);
@@ -175,14 +176,15 @@ var RefreshTokenModel = mongoose.model('RefreshToken', RefreshToken);
 
 //Grant Code
 var GrantCode = new Schema({
-    code: { type: String, unique: true, default: function() {
+    code: {
+        type: String, unique: true, default: function () {
             return crypto.randomBytes(24).toString('hex'); //todo remove this one and set externally.
         }
     },
-    user: { type: String, required: true },
-    client: { type: String, required: true },
-    scope: [ { type: String } ],
-    active: { type: Boolean, default: true }
+ //   user: {type: String, required: true},  //todo
+    client: {type: String, required: true},
+    scope: [{type: String}],
+    active: {type: Boolean, default: true}
 });
 
 var GrantCodeModel = mongoose.model('GrantCode', GrantCode);

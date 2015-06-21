@@ -58,7 +58,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         });
         var info = {
             scope: '*'
-        }
+        };
         token.save(function (err, token) {
             if (err) {
                 return done(err);
@@ -122,7 +122,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
             });
             var info = {
                 scope: '*'
-            }
+            };
             token.save(function (err, token) {
                 if (err) {
                     return done(err);
@@ -136,22 +136,23 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 }));
 
 server.grant(oauth2orize.grant.code({
-    scopeSeparator: [ ' ', ',' ]
-}, function(client, redirectURI, user, ares, done) {
+    scopeSeparator: [' ', ',']
+}, function (client, redirectURI, user, ares, done) {
+    console.log(user);
     var grant = new GrantCodeModel({
         client: client.clientId,
-        user: user.userId,
+        //user: user.userId,  //todo
         scope: ares.scope
     });
-    grant.save(function(error) {
+    grant.save(function (error) {
         done(error, error ? null : grant.code);
     });
 }));
 
 server.exchange(oauth2orize.exchange.code({
     userProperty: 'app'
-}, function(client, code, redirectURI, done) {
-    GrantCode.findOne({ code: code }, function(error, grant) {
+}, function (client, code, redirectURI, done) {
+    GrantCode.findOne({code: code}, function (error, grant) {
         if (grant && grant.active && grant.client == client.clientId) {
             var tokenValue = crypto.randomBytes(32).toString('hex');
             var token = new AccessTokenModel({
@@ -161,34 +162,34 @@ server.exchange(oauth2orize.exchange.code({
                 grant: grant,
                 scope: grant.scope
             });
-            token.save(function(error) {
-                done(error, error ? null : token.token, null, error ? null : { token_type: 'standard' });
+            token.save(function (error) {
+                done(error, error ? null : token.token, null, error ? null : {token_type: 'standard'});//todo send request token
             });
         } else {
-            done(error, false); 
+            done(error, false);
         }
     });
 }));
 
-server.serializeClient(function(client, done) {
+server.serializeClient(function (client, done) {
     done(null, client.clientId);
 });
-server.deserializeClient(function(id, done) {
+server.deserializeClient(function (id, done) {
     ClientModel.findOne({
-            clientId: clientId
-        }, function(err, client) {
-            done(error, error ? null : application);
+        clientId: id
+    }, function (err, client) {
+        done(err, err ? null : client);
     });
 
 });
 
 
-
 // token endpoint
-exports.token = [
+module.exports.token = [
     passport.authenticate(['basic', 'oauth2-client-password'], {
         session: false
     }),
     server.token(),
     server.errorHandler()
-]
+];
+module.exports.server = server;

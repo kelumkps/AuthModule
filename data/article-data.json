@@ -1,0 +1,12 @@
+{
+	"title": "SampleArticle",
+	"author": "Doe Johny",
+	"description": "consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+	"images": [{
+		"kind": "thumbnail",
+		"url": "http://habrahabr.ru/favicon.ico"
+	}, {
+		"kind": "detail",
+		"url": "http://habrahabr.ru/favicon.ico"
+	}]
+}
