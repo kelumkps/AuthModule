@@ -22,31 +22,31 @@ To run server execute:
 node server.js
 ```
 
-### Obtain Access Tokens by exchanging username & password
+#### Obtain Access Tokens by exchanging username & password
 
 ```
 curl -H "Accept: application/json" -H "Content-type: application/json"  --data @data\auth-token-req.json -X POST http://localhost:1337/oauth/token
 ```
 
-### Exchange refreshToken for an access token
+#### Exchange refreshToken for an access token
 
 ```
 curl -H "Accept: application/json" -H "Content-type: application/json" --data @data\refresh-token-req.json -X POST http://localhost:1337/oauth/token
 ```
 
-### Obtain Grant code 
+#### Obtain Grant code 
 
 ```
 http://localhost:1337/auth/start?client_id=mobileV1&response_type=code&scope=edit_account,do_things&redirect_uri=http://localhost/test
 ```
 
-### Exchange Grant Codes for Access Tokens
+#### Exchange Grant Codes for Access Tokens
 
 ```
 curl -H "Accept: application/json" -H "Content-type: application/json" -X POST --data @data\auth-token-by-code-req.json http://localhost:1337/auth/exchange
 ```
 
-### Call API end points with Access Token
+#### Call API end points with Access Token
 
 ```
 curl -H "Authorization: Bearer TOKEN" -X GET http://localhost:1337/api/articles
