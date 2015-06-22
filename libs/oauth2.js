@@ -1,6 +1,7 @@
 var oauth2orize = require('oauth2orize');
 var passport = require('passport');
 var crypto = require('crypto');
+var url = require('url');
 var config = require('./config');
 var UserModel = require('./mongoose').UserModel;
 var ClientModel = require('./mongoose').ClientModel;
@@ -135,12 +136,13 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
     });
 }));
 
+//Obtain Grant Code
 server.grant(oauth2orize.grant.code({
     scopeSeparator: [' ', ',']
 }, function (client, redirectURI, user, ares, done) {
     var grant = new GrantCodeModel({
         client: client.clientId,
-        user: user.userId,  
+        user: user.userId,
         scope: ares.scope
     });
     grant.save(function (error) {
@@ -148,6 +150,7 @@ server.grant(oauth2orize.grant.code({
     });
 }));
 
+//Exchange grant code for an access token.
 server.exchange(oauth2orize.exchange.code({
     userProperty: 'app'
 }, function (client, code, redirectURI, done) {
@@ -211,13 +214,89 @@ server.deserializeClient(function (id, done) {
 
 });
 
+// user authorization endpoint
+exports.authorization = [server.authorize(function (clientId, redirectURI, done) {
+    ClientModel.findOne({clientId: clientId}, function (error, client) {
+        if (client) {
+            var match = false, uri = url.parse(redirectURI || '');
+            for (var i = 0; i < client.domains.length; i++) {
+                if (uri.host == client.domains[i] || (uri.protocol == client.domains[i] && uri.protocol != 'http' && uri.protocol != 'https')) {
+                    match = true;
+                    break;
+                }
+            }
+            if (match && redirectURI && redirectURI.length > 0) {
+                done(null, client, redirectURI);
+            } else {
+                done(new Error("You must supply a redirect_uri that is a domain or url scheme owned by your app."), false);
+            }
+        } else if (!error) {
+            done(new Error("There is no app with the client_id you supplied."), false);
+        } else {
+            done(error);
+        }
+    });
+}), function (req, res) {
+    var scopeMap = {
+        // ... display strings for all scope variables ...
+        view_account: 'view your account',
+        edit_account: 'view and edit your account'
+    };
+    res.render('oauth', {
+        transaction_id: req.oauth2.transactionID,
+        currentURL: req.originalUrl,
+        response_type: req.query.response_type,
+        errors: req.flash('error'),
+        scope: req.oauth2.req.scope,
+        application: req.oauth2.client,
+        user: req.user,
+        map: scopeMap
+    });
+}];
+
+// user decision endpoint
+exports.decision = [function (req, res, next) {
+    if (req.user) {
+        next();
+    } else {
+        passport.authenticate('local', {
+            session: false
+        }, function (error, user, info) {
+            if (user) {
+                req.user = user;
+                next();
+            } else if (!error) {
+                req.flash('error', 'Your email or password was incorrect. Try again.');
+                res.redirect(req.body['auth_url'])
+            }
+        })(req, res, next);
+    }
+}, server.decision(function (req, done) {
+    done(null, {scope: req.oauth2.req.scope});
+})];
+
+//grant code exchange end point
+exports.exchange = [function (req, res, next) {
+    var appID = req.body['client_id'];
+    var appSecret = req.body['client_secret'];
+    ClientModel.findOne({clientId: appID, clientSecret: appSecret}, function (error, client) {
+        if (client) {
+            req.app = client;
+            next();
+        } else if (!error) {
+            error = new Error("There was no client with the Client ID and Secret you provided.");
+            next(error);
+        } else {
+            next(error);
+        }
+    });
+}, server.token(), server.errorHandler()];
 
 // token endpoint
-module.exports.token = [
+exports.token = [
     passport.authenticate(['basic', 'oauth2-client-password'], {
         session: false
     }),
     server.token(),
     server.errorHandler()
 ];
-module.exports.server = server;

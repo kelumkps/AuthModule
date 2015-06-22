@@ -7,14 +7,11 @@ var methodOverride = require('method-override');
 var log = require('./libs/log')(module);
 var config = require('./libs/config');
 var ArticleModel = require('./libs/mongoose').ArticleModel;
-var ClientModel = require('./libs/mongoose').ClientModel;
 var passport = require('passport');
 var oauth2 = require('./libs/oauth2');
 require('./libs/auth');
 var session = require('express-session');
-var url = require('url');
 var app = express();
-
 
 app.use(favicon(__dirname + '/public/favicon.ico')); // use standard favicon
 app.set('views', __dirname + '/views');
@@ -26,7 +23,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json()); // parse application/json 
 app.use(methodOverride()); // simulate DELETE and PUT
 app.use(require('connect-flash')());
-app.use(session({ secret: 'SECRET' })); // session secret
+app.use(session({secret: 'SECRET'})); // session secret
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 app.use(express.static(path.join(__dirname, "public"))); // starting static fileserver, that will watch `public` folder (in our case there will be `index.html`)
@@ -37,80 +34,11 @@ app.get('/api', function (req, res) {
 
 app.post('/oauth/token', oauth2.token);
 
-app.get('/auth/start', oauth2.server.authorize(function (clientId, redirectURI, done) {
-    ClientModel.findOne({clientId: clientId}, function (error, client) {
-        if (client) {
-            var match = false, uri = url.parse(redirectURI || '');
-            for (var i = 0; i < client.domains.length; i++) {
-                if (uri.host == client.domains[i] || (uri.protocol == client.domains[i] && uri.protocol != 'http' && uri.protocol != 'https')) {
-                    match = true;
-                    break;
-                }
-            }
-            if (match && redirectURI && redirectURI.length > 0) {
-                done(null, client, redirectURI);
-            } else {
-                done(new Error("You must supply a redirect_uri that is a domain or url scheme owned by your app."), false);
-            }
-        } else if (!error) {
-            done(new Error("There is no app with the client_id you supplied."), false);
-        } else {
-            done(error);
-        }
-    });
-}), function (req, res) {
-    var scopeMap = {
-        // ... display strings for all scope variables ...
-        view_account: 'view your account',
-        edit_account: 'view and edit your account'
-    };
-    res.render('oauth', {
-        transaction_id: req.oauth2.transactionID,
-        currentURL: req.originalUrl,
-        response_type: req.query.response_type,
-        errors: req.flash('error'),
-        scope: req.oauth2.req.scope,
-        application: req.oauth2.client,
-        user: req.user,
-        map: scopeMap
-    });
-});
+app.get('/auth/start', oauth2.authorization);
 
-app.post('/auth/finish', function (req, res, next) {
-    if (req.user) {
-        next();
-    } else {
-        passport.authenticate('local', {
-            session: false
-        }, function (error, user, info) {
-            if (user) {
-                req.user = user;
-                next();
-            } else if (!error) {
-                req.flash('error', 'Your email or password was incorrect. Try again.');
-                res.redirect(req.body['auth_url'])
-            }
-        })(req, res, next);
-    }
-}, oauth2.server.decision(function (req, done) {
-    done(null, {scope: req.oauth2.req.scope});
-}));
+app.post('/auth/finish', oauth2.decision);
 
-app.post('/auth/exchange', function (req, res, next) {
-    var appID = req.body['client_id'];
-    var appSecret = req.body['client_secret'];
-    ClientModel.findOne({clientId: appID, clientSecret: appSecret}, function (error, client) {
-        if (client) {
-            req.app = client;
-            next();
-        } else if (!error) {
-            error = new Error("There was no client with the Client ID and Secret you provided.");
-            next(error);
-        } else {
-            next(error);
-        }
-    });
-}, oauth2.server.token(), oauth2.server.errorHandler());
+app.post('/auth/exchange', oauth2.exchange);
 
 app.get('/api/userInfo',
     passport.authenticate('bearer', {
@@ -284,7 +212,6 @@ app.use(function (err, req, res, next) {
     res.send({
         error: err.message
     });
-    return;
 });
 
 
