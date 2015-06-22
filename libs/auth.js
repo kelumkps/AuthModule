@@ -24,15 +24,15 @@ passport.use(new LocalStrategy({
         }
         if (!user.checkPassword(password)) {
             return done(null, false);
-        }
-        done(err, user, err ? {message: err.message} : null);
+        } 
+        done(null, user);
     });
 
 }));
 
 passport.serializeUser(function (user, done) {
     cosole.log('serializeUser user', user);
-    done(null, user.id);
+    done(null, user.userId);
 });
 passport.deserializeUser(function (id, done) {
     UserModel.findById(id, function (error, user) {

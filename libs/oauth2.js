@@ -138,10 +138,9 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 server.grant(oauth2orize.grant.code({
     scopeSeparator: [' ', ',']
 }, function (client, redirectURI, user, ares, done) {
-    console.log(user);
     var grant = new GrantCodeModel({
         client: client.clientId,
-        //user: user.userId,  //todo
+        user: user.userId,  
         scope: ares.scope
     });
     grant.save(function (error) {
@@ -152,9 +151,33 @@ server.grant(oauth2orize.grant.code({
 server.exchange(oauth2orize.exchange.code({
     userProperty: 'app'
 }, function (client, code, redirectURI, done) {
-    GrantCode.findOne({code: code}, function (error, grant) {
+    GrantCodeModel.findOne({code: code}, function (error, grant) {
         if (grant && grant.active && grant.client == client.clientId) {
+            RefreshTokenModel.remove({
+                userId: grant.user,
+                clientId: client.clientId
+            }, function (err) {
+                if (err) return done(err);
+            });
+            AccessTokenModel.remove({
+                userId: grant.user,
+                clientId: client.clientId
+            }, function (err) {
+                if (err) return done(err);
+            });
+
             var tokenValue = crypto.randomBytes(32).toString('hex');
+            var refreshTokenValue = crypto.randomBytes(32).toString('hex');
+            var refreshToken = new RefreshTokenModel({
+                token: refreshTokenValue,
+                clientId: client.clientId,
+                userId: grant.user
+            });
+            refreshToken.save(function (err) {
+                if (err) {
+                    return done(err);
+                }
+            });
             var token = new AccessTokenModel({
                 token: tokenValue,
                 clientId: grant.client,
@@ -163,7 +186,12 @@ server.exchange(oauth2orize.exchange.code({
                 scope: grant.scope
             });
             token.save(function (error) {
-                done(error, error ? null : token.token, null, error ? null : {token_type: 'standard'});//todo send request token
+                if (error) {
+                    return done(error);
+                }
+                done(null, tokenValue, refreshTokenValue, {
+                    'expires_in': config.get('security:tokenLife')
+                });
             });
         } else {
             done(error, false);

@@ -19,7 +19,7 @@ var app = express();
 app.use(favicon(__dirname + '/public/favicon.ico')); // use standard favicon
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
-app.use(morgan(config.get('logger:format'))); // log   every request to the console
+app.use(morgan(config.get('logger:format'))); // log every request to the console
 app.use(bodyParser.urlencoded({
     extended: false
 })); // parse application/x-www-form-urlencoded  
@@ -84,6 +84,7 @@ app.post('/auth/finish', function (req, res, next) {
             session: false
         }, function (error, user, info) {
             if (user) {
+                req.user = user;
                 next();
             } else if (!error) {
                 req.flash('error', 'Your email or password was incorrect. Try again.');
@@ -98,7 +99,6 @@ app.post('/auth/finish', function (req, res, next) {
 app.post('/auth/exchange', function (req, res, next) {
     var appID = req.body['client_id'];
     var appSecret = req.body['client_secret'];
-
     ClientModel.findOne({clientId: appID, clientSecret: appSecret}, function (error, client) {
         if (client) {
             req.app = client;
@@ -163,7 +163,6 @@ app.post('/api/articles', function (req, res) {
                 article: article
             });
         } else {
-            console.log(err);
             if (err.name == 'ValidationError') {
                 res.statusCode = 400;
                 res.send({

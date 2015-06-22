@@ -1,7 +1,9 @@
-curl -H "Accept: application/json" -H "Content-type: application/json"  --data @auth-token-req.json -X POST http://localhost:1337/oauth/token
+curl -H "Accept: application/json" -H "Content-type: application/json"  --data @data\auth-token-req.json -X POST http://localhost:1337/oauth/token
 
 curl -H "Authorization: Bearer 84126d213f44abb22d96c476090d1428be62d888bf2e60f9e227a1bc4f8bdc41" -X GET http://localhost:1337/api/articles
 
-curl -H "Accept: application/json" -H "Content-type: application/json" --data @refresh-token-req.json -X POST http://localhost:1337/oauth/token
+curl -H "Accept: application/json" -H "Content-type: application/json" --data @data\refresh-token-req.json -X POST http://localhost:1337/oauth/token
 
 http://localhost:1337/auth/start?client_id=mobileV1&response_type=code&scope=edit_account,do_things&redirect_uri=http://localhost/test
+
+curl -H "Accept: application/json" -H "Content-type: application/json" -X POST --data @data\auth-token-by-code-req.json http://localhost:1337/auth/exchange

@@ -181,7 +181,7 @@ var GrantCode = new Schema({
             return crypto.randomBytes(24).toString('hex'); //todo remove this one and set externally.
         }
     },
- //   user: {type: String, required: true},  //todo
+    user: {type: String, required: true},  
     client: {type: String, required: true},
     scope: [{type: String}],
     active: {type: Boolean, default: true}
