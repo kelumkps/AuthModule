@@ -203,12 +203,11 @@ app.use(function (req, res, next) {
     res.send({
         error: 'Not found'
     });
-    return;
 });
 
 app.use(function (err, req, res, next) {
     res.status(err.status || 500);
-    log.error('Internal error(%d): %s ', res.statusCode, err);
+    log.error('Internal error(%d): ', res.statusCode, err);
     res.send({
         error: err.message
     });

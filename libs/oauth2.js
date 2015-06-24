@@ -140,13 +140,21 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 server.grant(oauth2orize.grant.code({
     scopeSeparator: [' ', ',']
 }, function (client, redirectURI, user, ares, done) {
-    var grant = new GrantCodeModel({
+    GrantCodeModel.remove({
         client: client.clientId,
-        user: user.userId,
-        scope: ares.scope
-    });
-    grant.save(function (error) {
-        done(error, error ? null : grant.code);
+        user: user.userId
+    }, function (err) {
+        if (err) return done(err);
+        var code = crypto.randomBytes(24).toString('hex');
+        var grant = new GrantCodeModel({
+            client: client.clientId,
+            user: user.userId,
+            scope: ares.scope,
+            code: code
+        });
+        grant.save(function (error) {
+            done(error, error ? null : grant.code);
+        });
     });
 }));
 
@@ -155,7 +163,8 @@ server.exchange(oauth2orize.exchange.code({
     userProperty: 'app'
 }, function (client, code, redirectURI, done) {
     GrantCodeModel.findOne({code: code}, function (error, grant) {
-        if (grant && grant.active && grant.client == client.clientId) {
+        if (grant && grant.client == client.clientId && grant.active &&
+            Math.round((Date.now() - grant.created) / 1000) < config.get('security:grantCodeLife')) {
             RefreshTokenModel.remove({
                 userId: grant.user,
                 clientId: client.clientId
@@ -189,9 +198,9 @@ server.exchange(oauth2orize.exchange.code({
                 scope: grant.scope
             });
             token.save(function (error) {
-                if (error) {
-                    return done(error);
-                }
+                if (error) return done(error);
+                grant.active = false;
+                grant.save(function (err) {});
                 done(null, tokenValue, refreshTokenValue, {
                     'expires_in': config.get('security:tokenLife')
                 });

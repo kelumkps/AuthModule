@@ -177,14 +177,16 @@ var RefreshTokenModel = mongoose.model('RefreshToken', RefreshToken);
 //Grant Code
 var GrantCode = new Schema({
     code: {
-        type: String, unique: true, default: function () {
-            return crypto.randomBytes(24).toString('hex'); //todo remove this one and set externally.
-        }
+        type: String, unique: true
     },
     user: {type: String, required: true},
     client: {type: String, required: true},
     scope: [{type: String}],
-    active: {type: Boolean, default: true}
+    active: {type: Boolean, default: true},
+    created: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 var GrantCodeModel = mongoose.model('GrantCode', GrantCode);

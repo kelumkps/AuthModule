@@ -1,16 +1,17 @@
 {
-	"port": 1337,
-	"logger": {
-		"format": "dev",
-		"level": {
-			"console": "debug",
-			"file": "info"
-		}
-	},
-	"mongoose": {
-		"uri": "mongodb://localhost/authmodule"
-	},
-	"security": {
-		"tokenLife": 3600
-	}
+  "port": 1337,
+  "logger": {
+    "format": "dev",
+    "level": {
+      "console": "debug",
+      "file": "info"
+    }
+  },
+  "mongoose": {
+    "uri": "mongodb://localhost/authmodule"
+  },
+  "security": {
+    "tokenLife": 3600,
+    "grantCodeLife": 600
+  }
 }
