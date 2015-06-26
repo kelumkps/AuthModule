@@ -32,7 +32,8 @@ ClientModel.remove({}, function(err) {
     var client = new ClientModel({
         name: "OurService iOS client v1",
         clientId: "mobileV1",
-        clientSecret: "abc123456"
+        clientSecret: "abc123456",
+        domains: "localhost"
     });
     client.save(function(err, client) {
         if (err) return log.error(err);
@@ -47,5 +48,5 @@ RefreshTokenModel.remove({}, function(err) {
 });
 
 setTimeout(function() {
-    mongoose.disconnect();
-}, 3000);
+    process.exit();
+}, 5000);
