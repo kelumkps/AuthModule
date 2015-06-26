@@ -78,8 +78,7 @@ var User = new Schema({
 });
 
 User.methods.encryptPassword = function (password) {
-    return crypto.createHmac('sha1', this.salt).update(password).digest('hex');
-    //more secure – return crypto.pbkdf2Sync(password, this.salt, 10000, 512);
+    return crypto.pbkdf2Sync(password, this.salt, 10000, 512).toString('hex');
 };
 
 User.virtual('userId')
@@ -90,8 +89,7 @@ User.virtual('userId')
 User.virtual('password')
     .set(function (password) {
         this._plainPassword = password;
-        this.salt = crypto.randomBytes(32).toString('hex');
-        //more secure - this.salt = crypto.randomBytes(128).toString('hex');
+        this.salt = crypto.randomBytes(128).toString('hex');
         this.hashedPassword = this.encryptPassword(password);
     })
     .get(function () {
@@ -100,6 +98,7 @@ User.virtual('password')
 
 
 User.methods.checkPassword = function (password) {
+    var tempPassword = this.encryptPassword(password);
     return this.encryptPassword(password) === this.hashedPassword;
 };
 
