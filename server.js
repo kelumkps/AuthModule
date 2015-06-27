@@ -26,19 +26,19 @@ app.use(require('connect-flash')());
 app.use(session({secret: 'SECRET'})); // session secret
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
-app.use(express.static(path.join(__dirname, "public"))); // starting static fileserver, that will watch `public` folder (in our case there will be `index.html`)
+app.use(express.static(path.join(__dirname, "public"))); // starting static file server, that will watch `public` folder (in our case there will be `index.html`)
 
 app.get('/api', function (req, res) {
     res.send('API is running');
 });
 
-app.post('/oauth/token', oauth2.token);
+app.post('/oauth2/token', oauth2.token);
 
-app.get('/auth/start', oauth2.authorization);
+app.get('/oauth2/auth', oauth2.authorization);
 
-app.post('/auth/finish', oauth2.decision);
+app.post('/oauth2/decision', oauth2.decision);
 
-app.post('/auth/exchange', oauth2.exchange);
+app.post('/oauth2/exchange', oauth2.exchange);
 
 app.get('/api/userInfo',
     passport.authenticate('bearer', {
