@@ -12,98 +12,17 @@ var GrantCodeModel = require('./mongoose').GrantCodeModel;
 // create OAuth 2.0 server
 var server = oauth2orize.createServer();
 
-// Exchange username & password for an access token.
-server.exchange(oauth2orize.exchange.password(function (client, username, password, scope, done) {
-    UserModel.findOne({
-        username: username
-    }, function (err, user) {
-        if (err) {
-            return done(err);
-        }
-        if (!user) {
-            return done(null, false);
-        }
-        if (!user.checkPassword(password)) {
-            return done(null, false);
-        }
-
-        RefreshTokenModel.remove({
-            userId: user.userId,
-            clientId: client.clientId
-        }, function (err) {
-            if (err) return done(err);
-        });
+function issueTokens(user, client, done) {
+    RefreshTokenModel.remove({
+        userId: user.userId,
+        clientId: client.clientId
+    }, function (err) {
+        if (err) return done(err);
         AccessTokenModel.remove({
             userId: user.userId,
             clientId: client.clientId
         }, function (err) {
             if (err) return done(err);
-        });
-
-        var tokenValue = crypto.randomBytes(32).toString('hex');
-        var refreshTokenValue = crypto.randomBytes(32).toString('hex');
-        var token = new AccessTokenModel({
-            token: tokenValue,
-            clientId: client.clientId,
-            userId: user.userId
-        });
-        var refreshToken = new RefreshTokenModel({
-            token: refreshTokenValue,
-            clientId: client.clientId,
-            userId: user.userId
-        });
-        refreshToken.save(function (err) {
-            if (err) {
-                return done(err);
-            }
-        });
-        var info = {
-            scope: '*'
-        };
-        token.save(function (err, token) {
-            if (err) {
-                return done(err);
-            }
-            done(null, tokenValue, refreshTokenValue, {
-                'expires_in': config.get('security:tokenLife')
-            });
-        });
-    });
-}));
-
-// Exchange refreshToken for an access token.
-server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken, scope, done) {
-    RefreshTokenModel.findOne({
-        token: refreshToken
-    }, function (err, token) {
-        if (err) {
-            return done(err);
-        }
-        if (!token) {
-            return done(null, false);
-        }
-
-        UserModel.findById(token.userId, function (err, user) {
-            if (err) {
-                return done(err);
-            }
-            if (!user) {
-                return done(null, false);
-            }
-
-            RefreshTokenModel.remove({
-                userId: user.userId,
-                clientId: client.clientId
-            }, function (err) {
-                if (err) return done(err);
-            });
-            AccessTokenModel.remove({
-                userId: user.userId,
-                clientId: client.clientId
-            }, function (err) {
-                if (err) return done(err);
-            });
-
             var tokenValue = crypto.randomBytes(32).toString('hex');
             var refreshTokenValue = crypto.randomBytes(32).toString('hex');
             var token = new AccessTokenModel({
@@ -134,7 +53,51 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
             });
         });
     });
+}
+
+// Exchange username & password for an access token.
+server.exchange(oauth2orize.exchange.password(function (client, username, password, scope, done) {
+    UserModel.findOne({
+        username: username
+    }, function (err, user) {
+        if (err) {
+            return done(err);
+        }
+        if (!user) {
+            return done(null, false);
+        }
+        if (!user.checkPassword(password)) {
+            return done(null, false);
+        }
+
+        issueTokens(user, client, done);
+    });
 }));
+
+// Exchange refreshToken for an access token.
+server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken, scope, done) {
+    RefreshTokenModel.findOne({
+        token: refreshToken
+    }, function (err, token) {
+        if (err) {
+            return done(err);
+        }
+        if (!token) {
+            return done(null, false);
+        }
+
+        UserModel.findById(token.userId, function (err, user) {
+            if (err) {
+                return done(err);
+            }
+            if (!user) {
+                return done(null, false);
+            }
+            issueTokens(user, client, done);
+        });
+    });
+}));
+
 
 //Obtain Grant Code
 server.grant(oauth2orize.grant.code({
@@ -170,39 +133,39 @@ server.exchange(oauth2orize.exchange.code({
                 clientId: client.clientId
             }, function (err) {
                 if (err) return done(err);
-            });
-            AccessTokenModel.remove({
-                userId: grant.user,
-                clientId: client.clientId
-            }, function (err) {
-                if (err) return done(err);
-            });
-
-            var tokenValue = crypto.randomBytes(32).toString('hex');
-            var refreshTokenValue = crypto.randomBytes(32).toString('hex');
-            var refreshToken = new RefreshTokenModel({
-                token: refreshTokenValue,
-                clientId: client.clientId,
-                userId: grant.user
-            });
-            refreshToken.save(function (err) {
-                if (err) {
-                    return done(err);
-                }
-            });
-            var token = new AccessTokenModel({
-                token: tokenValue,
-                clientId: grant.client,
-                userId: grant.user,
-                grant: grant,
-                scope: grant.scope
-            });
-            token.save(function (error) {
-                if (error) return done(error);
-                grant.active = false;
-                grant.save(function (err) {});
-                done(null, tokenValue, refreshTokenValue, {
-                    'expires_in': config.get('security:tokenLife')
+                AccessTokenModel.remove({
+                    userId: grant.user,
+                    clientId: client.clientId
+                }, function (err) {
+                    if (err) return done(err);
+                    var tokenValue = crypto.randomBytes(32).toString('hex');
+                    var refreshTokenValue = crypto.randomBytes(32).toString('hex');
+                    var refreshToken = new RefreshTokenModel({
+                        token: refreshTokenValue,
+                        clientId: client.clientId,
+                        userId: grant.user
+                    });
+                    refreshToken.save(function (err) {
+                        if (err) {
+                            return done(err);
+                        }
+                    });
+                    var token = new AccessTokenModel({
+                        token: tokenValue,
+                        clientId: grant.client,
+                        userId: grant.user,
+                        grant: grant,
+                        scope: grant.scope
+                    });
+                    token.save(function (error) {
+                        if (error) return done(error);
+                        grant.active = false;
+                        grant.save(function (err) {
+                        });
+                        done(null, tokenValue, refreshTokenValue, {
+                            'expires_in': config.get('security:tokenLife')
+                        });
+                    });
                 });
             });
         } else {
@@ -229,7 +192,8 @@ exports.authorization = [server.authorize(function (clientId, redirectURI, done)
         if (client) {
             var match = false, uri = url.parse(redirectURI || '');
             for (var i = 0; i < client.domains.length; i++) {
-                if (uri.host == client.domains[i] || (uri.protocol == client.domains[i] && uri.protocol != 'http' && uri.protocol != 'https')) {
+                if (uri.host == client.domains[i] || (uri.protocol == client.domains[i]
+                    && uri.protocol != 'http' && uri.protocol != 'https')) {
                     match = true;
                     break;
                 }
