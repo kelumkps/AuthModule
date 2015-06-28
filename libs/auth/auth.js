@@ -1,12 +1,12 @@
-var config = require('./config');
 var passport = require('passport');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
 var LocalStrategy = require('passport-local');
-var UserModel = require('./model/auth/user');
-var ClientModel = require('./model/auth/client');
-var AccessTokenModel = require('./model/auth/accessToken');
+var config = require('./../config');
+var UserModel = require('./../model/auth/user');
+var ClientModel = require('./../model/auth/client');
+var AccessTokenModel = require('./../model/auth/accessToken');
 
 passport.use(new LocalStrategy({
     usernameField: 'email',

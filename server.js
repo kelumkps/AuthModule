@@ -8,9 +8,9 @@ var log = require('./libs/log')(module);
 var config = require('./libs/config');
 var ArticleModel = require('./libs/model/api/article');
 var passport = require('passport');
-var oauth2 = require('./libs/oauth2');
-require('./libs/auth');
-require('./libs/mongoose');
+var oauth2 = require('./libs/auth/oauth2');
+require('./libs/auth/auth');
+require('./libs/db/mongoose');
 var session = require('express-session');
 var app = express();
 

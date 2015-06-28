@@ -2,12 +2,12 @@ var oauth2orize = require('oauth2orize');
 var passport = require('passport');
 var crypto = require('crypto');
 var url = require('url');
-var config = require('./config');
-var UserModel = require('./model/auth/user');
-var ClientModel = require('./model/auth/client');
-var AccessTokenModel = require('./model/auth/accessToken');
-var RefreshTokenModel = require('./model/auth/refreshToken');
-var GrantCodeModel = require('./model/auth/grantCode');
+var config = require('./../config');
+var UserModel = require('./../model/auth/user');
+var ClientModel = require('./../model/auth/client');
+var AccessTokenModel = require('./../model/auth/accessToken');
+var RefreshTokenModel = require('./../model/auth/refreshToken');
+var GrantCodeModel = require('./../model/auth/grantCode');
 
 // create OAuth 2.0 server
 var server = oauth2orize.createServer();
