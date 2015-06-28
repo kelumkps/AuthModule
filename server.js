@@ -6,10 +6,11 @@ var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
 var log = require('./libs/log')(module);
 var config = require('./libs/config');
-var ArticleModel = require('./libs/mongoose').ArticleModel;
+var ArticleModel = require('./libs/model/api/article');
 var passport = require('passport');
 var oauth2 = require('./libs/oauth2');
 require('./libs/auth');
+require('./libs/mongoose');
 var session = require('express-session');
 var app = express();
 
