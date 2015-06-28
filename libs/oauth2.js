@@ -12,7 +12,7 @@ var GrantCodeModel = require('./mongoose').GrantCodeModel;
 // create OAuth 2.0 server
 var server = oauth2orize.createServer();
 
-function issueTokens(user, client, done) {
+function issueTokens(user, client, scope, grant, done) {
     RefreshTokenModel.remove({
         userId: user.userId,
         clientId: client.clientId
@@ -28,8 +28,12 @@ function issueTokens(user, client, done) {
             var token = new AccessTokenModel({
                 token: tokenValue,
                 clientId: client.clientId,
-                userId: user.userId
+                userId: user.userId,
+                scope: scope
             });
+            if(grant) {
+                token.grant = grant;
+            }
             var refreshToken = new RefreshTokenModel({
                 token: refreshTokenValue,
                 clientId: client.clientId,
@@ -40,9 +44,6 @@ function issueTokens(user, client, done) {
                     return done(err);
                 }
             });
-            var info = {
-                scope: '*'
-            };
             token.save(function (err, token) {
                 if (err) {
                     return done(err);
@@ -69,8 +70,10 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         if (!user.checkPassword(password)) {
             return done(null, false);
         }
-
-        issueTokens(user, client, done);
+        if (!scope) {
+            scope = ['view_account', 'edit_account']; // should load scope based on user type
+        }
+        issueTokens(user, client, scope, null, done);
     });
 }));
 
@@ -79,21 +82,25 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
     RefreshTokenModel.findOne({
         token: refreshToken
     }, function (err, token) {
-        if (err) {
-            return done(err);
-        }
-        if (!token) {
-            return done(null, false);
-        }
+        if (err) return done(err);
+        if (!token) return done(null, false);
 
         UserModel.findById(token.userId, function (err, user) {
-            if (err) {
-                return done(err);
-            }
-            if (!user) {
-                return done(null, false);
-            }
-            issueTokens(user, client, done);
+            if (err) return done(err);
+            if (!user) return done(null, false);
+
+            AccessTokenModel.findOne({
+                userId: user.userId,
+                clientId: client.clientId
+            }, function (err, token) {
+                if (err) return done(err);
+                if (!token) return done(null, false);
+
+                if(!scope) {
+                    scope = token.scope;
+                }
+                issueTokens(user, client, scope, token.grant, done);
+            });
         });
     });
 }));
