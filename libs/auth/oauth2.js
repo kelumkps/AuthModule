@@ -280,3 +280,54 @@ exports.token = [
     server.token(),
     server.errorHandler()
 ];
+
+// token revoke
+exports.revoke = [function (req, res) {
+    var token = req.query.token;
+    
+    RefreshTokenModel.findOne({
+        token: token
+    }, function (err, refreshToken) {
+        if (err) return sendErrorResponse(err, res);
+        if (refreshToken) {
+            removeTokens(res, refreshToken.userId, refreshToken.clientId);
+        } else {
+            AccessTokenModel.findOne({
+                token: token
+            }, function (err, accessToken) {
+                if (err) return sendErrorResponse(err, res);
+                if (accessToken) {
+                    removeTokens(res, accessToken.userId, accessToken.clientId);
+                } else {
+                    sendErrorResponse({name: 'invalid token'}, res);
+                }
+                
+            });
+        }
+        
+    });    
+}];
+
+function sendErrorResponse(err, res) {
+    res.statusCode = 400;
+    res.send({
+        error: err.name
+    });
+};
+
+function removeTokens(res, userId, clientId) {
+    RefreshTokenModel.remove({
+        userId: userId,
+        clientId: clientId
+    }, function (err) {
+        if (err) return sendErrorResponse(err, res);
+        AccessTokenModel.remove({
+            userId: userId,
+            clientId: clientId
+        }, function (err) {
+            if (err) return sendErrorResponse(err, res);
+            res.statusCode = 200;
+            res.send();
+        });
+    });
+};

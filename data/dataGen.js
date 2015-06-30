@@ -1,10 +1,10 @@
 var log = require('./libs/log')(module);
-var mongoose = require('./libs/mongoose').mongoose;
-var UserModel = require('./libs/mongoose').UserModel;
-var ClientModel = require('./libs/mongoose').ClientModel;
-var AccessTokenModel = require('./libs/mongoose').AccessTokenModel;
-var RefreshTokenModel = require('./libs/mongoose').RefreshTokenModel;
+var UserModel = require('./libs/model/auth/user');
+var ClientModel = require('./libs/model/auth/client');
+var AccessTokenModel = require('./libs/model/auth/accessToken');
+var RefreshTokenModel = require('./libs/model/auth/refreshToken');
 var faker = require('Faker');
+require('./libs/db/mongoose');
 
 UserModel.remove({}, function(err) {
     var user = new UserModel({

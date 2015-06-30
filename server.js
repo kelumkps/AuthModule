@@ -41,6 +41,8 @@ app.post('/oauth2/decision', oauth2.decision);
 
 app.post('/oauth2/exchange', oauth2.exchange);
 
+app.get('/oauth2/revoke', oauth2.revoke);
+
 app.get('/api/userInfo',
     passport.authenticate('bearer', {
         session: false
