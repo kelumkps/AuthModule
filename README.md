@@ -52,6 +52,14 @@ curl -H "Accept: application/json" -H "Content-type: application/json" -X POST -
 curl -H "Authorization: Bearer TOKEN" -X GET http://localhost:1337/api/articles
 ```
 
+## Run Tests
+
+To run test, first run the server and then execute:
+
+```
+npm test
+```
+
 ## Modules used
 
 Some of non standard modules used:

@@ -31,7 +31,7 @@ function issueTokens(user, client, scope, grant, done) {
                 userId: user.userId,
                 scope: scope
             });
-            if(grant) {
+            if (grant) {
                 token.grant = grant;
             }
             var refreshToken = new RefreshTokenModel({
@@ -96,7 +96,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
                 if (err) return done(err);
                 if (!token) return done(null, false);
 
-                if(!scope) {
+                if (!scope) {
                     scope = token.scope;
                 }
                 issueTokens(user, client, scope, token.grant, done);
@@ -284,7 +284,7 @@ exports.token = [
 // token revoke
 exports.revoke = [function (req, res) {
     var token = req.query.token;
-    
+
     RefreshTokenModel.findOne({
         token: token
     }, function (err, refreshToken) {
@@ -301,11 +301,11 @@ exports.revoke = [function (req, res) {
                 } else {
                     sendErrorResponse({name: 'invalid token'}, res);
                 }
-                
+
             });
         }
-        
-    });    
+
+    });
 }];
 
 function sendErrorResponse(err, res) {
@@ -313,7 +313,7 @@ function sendErrorResponse(err, res) {
     res.send({
         error: err.name
     });
-};
+}
 
 function removeTokens(res, userId, clientId) {
     RefreshTokenModel.remove({
@@ -330,4 +330,4 @@ function removeTokens(res, userId, clientId) {
             res.send();
         });
     });
-};
+}
