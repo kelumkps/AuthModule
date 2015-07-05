@@ -63,7 +63,6 @@ describe('Test Auth Server', function () {
                     if (err) throw err;
                     res.body.should.exist;
                     expect(Buffer.isBuffer(res.body)).to.be.true;
-                    //console.log(res);
                     done();
                 });
         });
